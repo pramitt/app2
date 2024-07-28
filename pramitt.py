@@ -1,61 +1,58 @@
 import streamlit as st
 import pandas as pd
 
+st.title("Marketing Data Analysis App")
 
-# Sample marketing data
-data = {
-    'Campaign': ['Campaign A', 'Campaign B', 'Campaign C', 'Campaign D'],
-    'Impressions': [1500, 2500, 1800, 3000],
-    'Clicks': [100, 150, 130, 180],
-    'Conversions': [10, 20, 15, 25]
-}
+# Upload CSV file
+uploaded_file = st.file_uploader("Choose a file", type=["csv"])
 
-# Convert the data into a DataFrame
-df = pd.DataFrame(data)
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file)
 
-# Title of the app
-st.title("Marketing Dashboard")
+    st.subheader("Dataset")
+    st.write("First 5 rows of the dataset:")
+    st.write(df.head())
 
-# Display the raw data
-st.subheader("Marketing Campaign Data")
-st.dataframe(df)
+    # Display basic statistics
+    st.subheader("Basic Statistics")
+    st.write(df.describe())
 
-# Filter the data based on Campaign
-campaign = st.selectbox("Select Campaign", df['Campaign'].unique())
-filtered_data = df[df['Campaign'] == campaign]
+    # Select columns for visualization
+    st.subheader("Visualizations")
+    st.write("Select columns for visualization")
 
-st.subheader(f"Data for {campaign}")
-st.dataframe(filtered_data)
+    numerical_columns = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
+    categorical_columns = df.select_dtypes(include=['object']).columns.tolist()
 
-# Visualizations
-st.subheader("Visualizations")
+    if numerical_columns:
+        st.write("Numerical Columns")
+        num_column = st.selectbox("Select Numerical Column", numerical_columns)
 
-# Impressions vs Clicks
-fig, ax = plt.subplots()
-ax.bar(df['Campaign'], df['Impressions'], label='Impressions')
-ax.bar(df['Campaign'], df['Clicks'], bottom=df['Impressions'], label='Clicks')
-ax.set_ylabel('Count')
-ax.set_title('Impressions and Clicks by Campaign')
-ax.legend()
-st.pyplot(fig)
+        # Histogram
+        st.write(f"Histogram of {num_column}")
+        st.bar_chart(df[num_column].value_counts())
 
-# Conversions
-fig, ax = plt.subplots()
-ax.pie(df['Conversions'], labels=df['Campaign'], autopct='%1.1f%%', startangle=90)
-ax.axis('equal')
-st.pyplot(fig)
+        # Boxplot
+        st.write(f"Boxplot of {num_column}")
+        st.write(df[[num_column]].boxplot())
 
-# Additional Metrics
-st.subheader("Metrics")
-total_impressions = df['Impressions'].sum()
-total_clicks = df['Clicks'].sum()
-total_conversions = df['Conversions'].sum()
+    if categorical_columns:
+        st.write("Categorical Columns")
+        cat_column = st.selectbox("Select Categorical Column", categorical_columns)
 
-col1, col2, col3 = st.columns(3)
-col1.metric("Total Impressions", total_impressions)
-col2.metric("Total Clicks", total_clicks)
-col3.metric("Total Conversions", total_conversions)
+        # Bar chart
+        st.write(f"Bar Chart of {cat_column}")
+        st.bar_chart(df[cat_column].value_counts())
 
-# Run the app
-if __name__ == '__main__':
-    st.run()
+    # Correlation heatmap
+    st.subheader("Correlation Heatmap")
+    if len(numerical_columns) > 1:
+        corr = df[numerical_columns].corr()
+        st.write(corr.style.background_gradient(cmap='coolwarm'))
+
+    # Pairplot
+    st.subheader("Pairplot")
+    if len(numerical_columns) > 1:
+        st.write("Pairplot of numerical columns")
+        st.write(pd.plotting.scatter_matrix(df[numerical_columns], figsize=(10, 10)))
+
